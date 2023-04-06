@@ -1,0 +1,11 @@
+/.idea/
+*.iml
+target
+
+integration-dev-test
+/build-and-deploy.cmd
+/deploy.cmd
+
+local-scripts
+make.cmd
+setup.sh
