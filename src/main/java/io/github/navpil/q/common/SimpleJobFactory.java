@@ -34,13 +34,12 @@ public class SimpleJobFactory implements JobFactory {
                 return factories.get(className).get();
             }
 
-            return jobClass.newInstance();
+            return jobClass.getDeclaredConstructor().newInstance();
 
         } catch (Exception e) {
-            SchedulerException se = new SchedulerException(
+            throw new SchedulerException(
                     "Problem instantiating class '"
                             + jobDetail.getJobClass().getName() + "'", e);
-            throw se;
         }
 
     }
