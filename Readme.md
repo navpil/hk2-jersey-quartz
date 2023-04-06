@@ -19,3 +19,5 @@ Call
 And check that the time is updated with scheduler.
 
 Most of the interesting stuff is written in `BooksApplication`
+
+Code was taken and adapted from [StackOverflow](https://stackoverflow.com/questions/42951949/hk2-factory-for-quartz-jobs-not-destroying-service-after-execution)
