@@ -4,17 +4,12 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.hk2.api.Immediate;
 
 @Path("dummyquartz")
-@Produces({MediaType.APPLICATION_JSON})
-@Consumes(MediaType.APPLICATION_JSON)
 @Singleton
 @Immediate
 public class DummyQuartzResource {
@@ -36,6 +31,8 @@ public class DummyQuartzResource {
         executor.shutdown();
     }
 
+    //This method is not really needed, but Jersey gives warning about having no resources,
+    // so better keep it for forward compatibility
     @GET
     public Response dummyEndpoint() {
         return Response.ok().build();

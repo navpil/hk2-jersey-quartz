@@ -24,7 +24,7 @@ public class HK2JobFactory implements JobFactory {
     }
 
     @Override
-    public Job newJob(TriggerFiredBundle bundle, Scheduler scheduler) throws SchedulerException {
+    public Job newJob(TriggerFiredBundle bundle, Scheduler scheduler) {
         JobDetail jobDetail = bundle.getJobDetail();
         Class<? extends Job> jobClass = jobDetail.getJobClass();
         try {
@@ -33,15 +33,16 @@ public class HK2JobFactory implements JobFactory {
             Job job = serviceLocator.getService(jobClass);
             if (job == null) {
                 LOG.debug("Unable to instantiate job via ServiceLocator, returning unmanaged instance.");
-                return jobClass.newInstance();
+                return jobClass.getDeclaredConstructor().newInstance();
             }
             return job;
 
         } catch (Exception e) {
-            SchedulerException se = new SchedulerException(
-                    "Problem instantiating class '"
-                            + jobDetail.getJobClass().getName() + "'", e);
-            return jobExecutionContext -> {};
+            LOG.error("Problem instantiating class '"
+                    + jobDetail.getJobClass().getName()
+                    + "', returning no-op job", e);
+            return jobExecutionContext -> {
+            };
         }
 
     }
