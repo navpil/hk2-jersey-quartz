@@ -41,22 +41,27 @@ I demonstrate how to do it with the hack of having a static helper.
 In this way static context plays the role of an Uber Context, since it's managed by JVM.
 Since I dislike storing dynamic data in static fields I called this approach a _Horrible Hack_.
 
-## Immediate resource vs ContainerLifecycleListener
+## Eager Initialization
 
-To eagerly initialize something, in our case - starting a Quartz job, one may use one of two approaches:
+To eagerly initialize something, in our case - starting a Quartz job one can use several approaches
 
+ - Immediate component
  - Immediate resource
  - ContainerLifecycleListener
 
-Two are practically equivalent, it depends on which one you dislike less.
+### Immediate component/resource
 
-### Immediate resource
+The cleanest way is definitely an _Immediate component_.
+Inside the binder, bind your component with an `@Immediate` scope 
+(please note that putting this annotation directly on class did not work).
 
-Annotate your resource with `@Immediate` and register the `ImmediateFeature.class` (from `io.github.navpil.q.common` package)
-All the bean management can be done in the resource in the `@PostConstruct` and `@PreDestroy` annotated methods
+    bindAsContract(BooksQuartzJobExecutor.class).in(Immediate.class);
 
-Demonstrated by `DummyQuartzResource` and `InitializeUberContextHorribleHackResource` 
-(even though the latter is not registered)
+In order this to work register `io.github.navpil.q.common.ImmediateFeature.class`.
+And note the `@PostConstruct` annotation on `BooksQuartzJobExecutor` where the job is actually started.
+
+Annotation `@Immediate` work on resources (such as `InitializeUberContextResource`).
+You may inject classes there to do some actions on startup, but scoping beans with `Immediate.class` is cleaner.
 
 ### ContainerLifecycleListener
 
@@ -75,3 +80,8 @@ or
     UberContextHorribleHack.putServiceLocator(BooksApplication.NAME, serviceLocator);
 
 Demonstrated with `BooksApplicationContainerLifecycleListener`
+
+## Some links
+
+ - [Basic HK2 tutorial](https://riptutorial.com/jersey/example/23632/basic-dependency-injection-using-jersey-s-hk2)
+ - [Jersey/HK2 with web.xml](https://www.appsdeveloperblog.com/dependency-injection-hk2-jersey-jax-rs/)

@@ -1,8 +1,10 @@
 package io.github.navpil.q.quartz;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.glassfish.hk2.api.Immediate;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
@@ -16,7 +18,7 @@ import org.quartz.spi.JobFactory;
 
 import java.util.Properties;
 
-@Singleton
+@Immediate
 public class BooksQuartzJobExecutor {
 
     private Scheduler scheduler;
@@ -27,6 +29,7 @@ public class BooksQuartzJobExecutor {
         this.jobFactory = jobFactory;
     }
 
+    @PostConstruct
     public void start() {
         try {
             // Grab the Scheduler instance from the Factory
@@ -50,8 +53,6 @@ public class BooksQuartzJobExecutor {
             JobDetail job = JobBuilder.newJob(UpdateBookServiceJob.class)
                     .withIdentity("job1", "group1")
                     .build();
-
-
 
             Trigger trigger = TriggerBuilder.newTrigger()
                     .withIdentity("trigger1", "group1")

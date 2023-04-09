@@ -2,19 +2,26 @@ package io.github.navpil.q.oldschool;
 
 import io.github.navpil.q.BooksApplication;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Response;
 import org.glassfish.hk2.api.Immediate;
 import org.glassfish.hk2.api.ServiceLocator;
 
 @Path("dummyhorriblehack")
-@Singleton
 @Immediate
-public class InitializeUberContextHorribleHackResource {
+public class InitializeUberContextResource {
 
     @Inject
-    public InitializeUberContextHorribleHackResource(ServiceLocator locator) {
+    public InitializeUberContextResource(ServiceLocator locator) {
         UberContextHorribleHack.putServiceLocator(BooksApplication.NAME, locator);
     }
+
+    //Jersey complains about resources with no endpoints
+    @GET
+    public Response dummy() {
+        return Response.ok().build();
+    }
+
 
 }

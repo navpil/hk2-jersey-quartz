@@ -6,10 +6,10 @@ import io.github.navpil.q.common.HK2JobFactory;
 import io.github.navpil.q.common.ImmediateFeature;
 import io.github.navpil.q.oldschool.UberContextHorribleHack;
 import io.github.navpil.q.quartz.BooksQuartzJobExecutor;
-import io.github.navpil.q.quartz.DummyQuartzResource;
 import io.github.navpil.q.quartz.UpdateBookServiceJob;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.ApplicationPath;
+import org.glassfish.hk2.api.Immediate;
 import org.glassfish.hk2.api.ServiceLocator;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -23,34 +23,26 @@ public class BooksApplication extends ResourceConfig {
     public static final String NAME = "BooksApplication";
 
     public BooksApplication() {
-        // Need to register a dummy resource to eager loading of the Quartz Scheduler
-        //   (annotating BooksQuartzJobExecutor with @Immediate did not work)
-        // Another way of doing initialization is through registering ContainerLifecycleListener and in onStartup() do:
-        //     serviceLocator.getService(BooksQuartzJobExecutor.class).start()
-        //   demonstrated with the UberContextHorribleHack
         super(
-                DummyQuartzResource.class
-                // you can use the Immediate resource initialization or ContainerLifecycleListener,
-                // the latter approach is used for HorribleHack
+                //While this is possible, using BooksApplicationContainerLifecycleListener is arguably cleaner
 //                InitializeUberContextHorribleHackResource.class
         );
         // Usual scanning...
         packages("io.github.navpil.q.books");
-        // So that DummyQuartzResource is indeed immediately initialized,
-        //    not needed if ContainerLifecycleListener is used
+        // So that BooksQuartzJobExecutor is indeed immediately initialized,
+        //    not needed if ContainerLifecycleListener is used for quartz job startup
         register(ImmediateFeature.class);
 
         register(new BooksApplicationContainerLifecycleListener());
         register(new AbstractBinder() {
             @Override
             protected void configure() {
-                // Quartz Job Executor will be injected into a Dummy Quartz Resource and will control its lifecycle
-                bind(BooksQuartzJobExecutor.class).to(BooksQuartzJobExecutor.class)
-                        .in(Singleton.class);
+                bindAsContract(BooksQuartzJobExecutor.class)
+                        .in(Immediate.class);
                 // HK2JobFactory will have reference to a service locator
                 bind(HK2JobFactory.class).to(JobFactory.class);
                 // Actual job we want to startup (can be many of them)
-                bind(UpdateBookServiceJob.class).to(UpdateBookServiceJob.class);
+                bindAsContract(UpdateBookServiceJob.class);
 
                 //Singleton BookService, so that we can see inner state updates through the controller
                 bind(BookServiceImpl.class).to(BookService.class)
