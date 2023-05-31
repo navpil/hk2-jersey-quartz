@@ -3,14 +3,10 @@ package io.github.navpil.q;
 import io.github.navpil.q.books.BookService;
 import io.github.navpil.q.books.BookServiceImpl;
 import io.github.navpil.q.common.HK2JobFactory;
-import io.github.navpil.q.common.ImmediateFeature;
-import io.github.navpil.q.oldschool.UberContextHorribleHack;
 import io.github.navpil.q.quartz.BooksQuartzJobExecutor;
 import io.github.navpil.q.quartz.UpdateBookServiceJob;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.ApplicationPath;
-import org.glassfish.hk2.api.Immediate;
-import org.glassfish.hk2.api.ServiceLocator;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.spi.Container;
@@ -20,29 +16,21 @@ import org.quartz.spi.JobFactory;
 @ApplicationPath("/booksapp/*")
 public class BooksApplication extends ResourceConfig {
 
-    public static final String NAME = "BooksApplication";
-
     public BooksApplication() {
-        super(
-                //While this is possible, using BooksApplicationContainerLifecycleListener is arguably cleaner
-//                InitializeUberContextHorribleHackResource.class
-        );
-        // Usual scanning...
         packages("io.github.navpil.q.books");
-        // So that BooksQuartzJobExecutor is indeed immediately initialized,
-        //    not needed if ContainerLifecycleListener is used for quartz job startup
-        register(ImmediateFeature.class);
 
+        //This one will start the quartz scheduler
         register(new BooksApplicationContainerLifecycleListener());
         register(new AbstractBinder() {
             @Override
             protected void configure() {
-                bindAsContract(BooksQuartzJobExecutor.class)
-                        .in(Immediate.class);
+                bindAsContract(BooksQuartzJobExecutor.class).in(Singleton.class);
                 // HK2JobFactory will have reference to a service locator
                 bind(HK2JobFactory.class).to(JobFactory.class);
                 // Actual job we want to startup (can be many of them)
                 bindAsContract(UpdateBookServiceJob.class);
+
+                bind("Started using ContainerLifecycleListener").to(String.class).named("Description");
 
                 //Singleton BookService, so that we can see inner state updates through the controller
                 bind(BookServiceImpl.class).to(BookService.class)
@@ -52,22 +40,26 @@ public class BooksApplication extends ResourceConfig {
     }
 
     public static class BooksApplicationContainerLifecycleListener implements ContainerLifecycleListener {
+
+        private BooksQuartzJobExecutor executor;
+
         public void onStartup(Container container)
         {
-            ServiceLocator serviceLocator = container.getApplicationHandler().getInjectionManager()
-                    .getInstance(ServiceLocator.class);
-            UberContextHorribleHack.putServiceLocator(BooksApplication.NAME, serviceLocator);
-
-            //Other things can be done here, for example:
-            //   serviceLocator.getService(BooksQuartzJobExecutor.class).start()
+            executor = container.getApplicationHandler().getInjectionManager()
+                    .getInstance(BooksQuartzJobExecutor.class);
+            //Technically there is no need to call ".start()" because starting is handled by @PostConstruct
+            // but we still need to get the reference to the class it to be instantiated
+            executor.start();
         }
 
         public void onReload(Container container) {/*...*/}
         public void onShutdown(Container container) {
-            //If BooksQuartzJobExecutor was started in onStartup, you may stop it here:
-            //   serviceLocator.getService(BooksQuartzJobExecutor.class).shutdown();
-            // alternatively you may store the reference to the service in this class field and stop it
-            //   (in case it's not singleton)
+            if (executor != null) {
+                executor.shutdown();
+            } else {
+                container.getApplicationHandler().getInjectionManager()
+                        .getInstance(BooksQuartzJobExecutor.class).shutdown();
+            }
         }
     }
 

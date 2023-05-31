@@ -1,6 +1,6 @@
 package io.github.navpil.q.oldschool;
 
-import io.github.navpil.q.BooksApplication;
+import io.github.navpil.q.BooksApplicationWithUberHack;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -14,7 +14,7 @@ public class InitializeUberContextResource {
 
     @Inject
     public InitializeUberContextResource(ServiceLocator locator) {
-        UberContextHorribleHack.putServiceLocator(BooksApplication.NAME, locator);
+        UberContextHorribleHack.putServiceLocator(BooksApplicationWithUberHack.NAME, locator);
     }
 
     //Jersey complains about resources with no endpoints

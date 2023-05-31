@@ -22,12 +22,6 @@ Most of the interesting stuff is written in `BooksApplication`
 
 Code was taken and adapted from [StackOverflow](https://stackoverflow.com/questions/42951949/hk2-factory-for-quartz-jobs-not-destroying-service-after-execution)
 
-To check how the BookService can be accessed outside the scope of BookApplication, call the:
-
-    http://localhost:8080/quartzhk2/nonmanaged/bookshack
-
-and check `NonManagedOldSchoolServlet`
-
 ## Getting HK2 beans from non managed scope
 
 This one is not really related to the HK2/Jersey/Quartz, but it was interesting for me how to get hold of managed beans
@@ -40,6 +34,15 @@ Getting hold of the injected resource outside HK2 context is not that easy.
 I demonstrate how to do it with the hack of having a static helper.
 In this way static context plays the role of an Uber Context, since it's managed by JVM.
 Since I dislike storing dynamic data in static fields I called this approach a _Horrible Hack_.
+
+This approach is shown in `BooksApplicationWithUberHack`.
+To see that non-managed Servlet (`NonManagedOldSchoolServlet`) has access to the HK2 bean, call the
+
+    POST http://localhost:8080/quartzhk2/booksappwithhack/books/manual-update/
+
+And then call
+
+    http://localhost:8080/quartzhk2/nonmanaged/bookshack
 
 ## Eager Initialization
 
@@ -63,6 +66,10 @@ And note the `@PostConstruct` annotation on `BooksQuartzJobExecutor` where the j
 Annotation `@Immediate` work on resources (such as `InitializeUberContextResource`).
 You may inject classes there to do some actions on startup, but scoping beans with `Immediate.class` is cleaner.
 
+An approach with Immediate Scope is shown in `BooksApplicationWithImmediateScope` and can be accessed on:
+
+    http://localhost:8080/quartzhk2/booksapp-with-immediate/books/
+
 ### ContainerLifecycleListener
 
 Register an implementation of a `ContainerLifecycleListener` and in the `onStartup` method you can do:
@@ -79,7 +86,9 @@ or
 
     UberContextHorribleHack.putServiceLocator(BooksApplication.NAME, serviceLocator);
 
-Demonstrated with `BooksApplicationContainerLifecycleListener`
+Demonstrated with `BooksApplicationContainerLifecycleListener` used in `BooksApplication`, accessed on:
+
+    http://localhost:8080/quartzhk2/booksapp/books/
 
 ## Some links
 

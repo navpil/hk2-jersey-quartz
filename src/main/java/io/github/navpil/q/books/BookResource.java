@@ -4,6 +4,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
@@ -29,6 +30,13 @@ public class BookResource {
     public Response listUsers() {
         List<String> users = bookService.listBooks();
         return Response.ok(users).build();
+    }
+
+    @POST
+    @Path("manual-update")
+    public Response manualUpdate() {
+        bookService.changeLastUpdated();
+        return Response.ok().build();
     }
 
     @GET
